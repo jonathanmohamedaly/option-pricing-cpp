@@ -36,8 +36,8 @@ int main() {
         double mcPrice = mc.priceEuropean(S0, T, call, n);
         double error = std::abs(mcPrice - bsPrice) / bsPrice;
 
-        out << n << ";"
-            << mcPrice << ";"
+        out << n << "\t"
+            << mcPrice << "\t"
             << error << "\n";
     }
 
