@@ -43,5 +43,25 @@ int main() {
 
     out.close();
 
+    std::ofstream out2("convergence_mc_antithetic.txt");
+    if (!out2) {
+        std::cerr << "Erreur : impossible d'ouvrir le fichier\n";
+        return 1;
+    }
+
+    out2 << "nSimulations;MC_Price_Antithetic;Relative_Error\n";
+
+    for (auto n : nSimulations) {
+        MonteCarloPricer mc(r, sigma);
+        double mcPrice = mc.priceEuropeanAntithetic(S0, T, call, n);
+        double error = std::abs(mcPrice - bsPrice) / bsPrice;
+
+        out2 << n << ";"
+            << mcPrice << ";"
+            << error << "\n";
+    }
+
+    out2.close();
+
     return 0;
 }

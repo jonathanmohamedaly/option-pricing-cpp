@@ -13,6 +13,8 @@ class MonteCarloPricer {
 
         double priceEuropean(double S_0, double T, const Payoff& payoff, int nSimulations) const;
 
+        double priceEuropeanAntithetic(double S_0, double T, const Payoff& payoff, int nSimulations) const;
+
     private:
 
         double r_;
