@@ -1,23 +1,47 @@
 #include <iostream>
-#include "../include/MonteCarloPricer.hpp"
-#include "../include/EuropeanOption.hpp"
-#include "../include/BlackScholes.hpp"
+#include <vector>
+#include <cmath>
+#include <fstream>
+#include "../include/MonteCarloPricer.hpp" 
+#include "../include/BlackScholes.hpp"     
+#include "../include/EuropeanOption.hpp"     
 
 int main() {
-    double S0 = 100.0;
-    double K = 100.0;
-    double T = 1.0;
-    double r = 0.05;
-    double sigma = 0.2;
-
+    double S0 = 100.0, K = 100.0, r = 0.05, sigma = 0.2, T = 1.0;
     EuropeanCall call(K);
-    EuropeanPut put(K);
 
-    MonteCarloPricer pricer(r, sigma);
+    std::vector<int> nSimulations;
+    nSimulations.reserve(500);
 
-    double mcCall = pricer.priceEuropean(S0, T, call, 1000000);
-    double bsCall = BlackScholes::call(S0, K, T, r, sigma);
+    int nMin = 1000;
+    int nMax = 1000000;
+    int nPoints = 1000;
 
-    std::cout << "Monte Carlo Call: " << mcCall << std::endl;
-    std::cout << "Black-Scholes Call: " << bsCall << std::endl;
+    for (int i = 0; i < nPoints; ++i) {
+        int n = nMin + i * (nMax - nMin) / (nPoints - 1);
+        nSimulations.push_back(n);
+    }
+    double bsPrice = BlackScholes::call(S0, K, T, r, sigma);
+
+    std::ofstream out("convergence_mc.txt");
+    if (!out) {
+        std::cerr << "Erreur : impossible d'ouvrir le fichier\n";
+        return 1;
+    }
+
+    out << "nSimulations;MC_Price;Relative_Error\n";
+
+    for (auto n : nSimulations) {
+        MonteCarloPricer mc(r, sigma);
+        double mcPrice = mc.priceEuropean(S0, T, call, n);
+        double error = std::abs(mcPrice - bsPrice) / bsPrice;
+
+        out << n << ";"
+            << mcPrice << ";"
+            << error << "\n";
+    }
+
+    out.close();
+
+    return 0;
 }

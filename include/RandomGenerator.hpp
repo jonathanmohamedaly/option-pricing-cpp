@@ -6,7 +6,7 @@ class RandomGenerator {
 
     public:
 
-        RandomGenerator(unsigned int seed = 42);
+        RandomGenerator();
         double gaussian();
 
     private:

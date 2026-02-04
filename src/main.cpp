@@ -15,13 +15,13 @@ int main() {
 
     int nMin = 1000;
     int nMax = 1000000;
-    int nPoints = 500;
+    int nPoints = 1000;
 
     for (int i = 0; i < nPoints; ++i) {
         int n = nMin + i * (nMax - nMin) / (nPoints - 1);
         nSimulations.push_back(n);
     }
-    double bsPrice = BlackScholes::call(S0, K, r, sigma, T);
+    double bsPrice = BlackScholes::call(S0, K, T, r, sigma);
 
     std::ofstream out("convergence_mc.txt");
     if (!out) {
@@ -29,7 +29,7 @@ int main() {
         return 1;
     }
 
-    out << "nSimulations\tMC_Price\tRelative_Error\n";
+    out << "nSimulations;MC_Price;Relative_Error\n";
 
     for (auto n : nSimulations) {
         MonteCarloPricer mc(r, sigma);

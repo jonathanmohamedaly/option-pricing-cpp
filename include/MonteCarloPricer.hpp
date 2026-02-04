@@ -17,6 +17,6 @@ class MonteCarloPricer {
 
         double r_;
         double sigma_;
-
+        mutable RandomGenerator rng_;
 
 };
