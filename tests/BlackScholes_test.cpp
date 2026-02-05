@@ -15,5 +15,16 @@ int main(){
     std::cout << "Call price: " << call_price << std::endl;
     std::cout << "Put price: " << put_price << std::endl;
 
+    double delta_call = BlackScholes::delta(OptionType::Call, S_0, K, T, r, sigma);
+    double delta_put  = BlackScholes::delta(OptionType::Put,S_0, K, T, r, sigma);
+    double gamma = BlackScholes::gamma(S_0, K, T, r, sigma);
+    double vega = BlackScholes::vega(S_0, K, T, r, sigma);
+
+    std::cout << "\n=== Greeks (Black-Scholes) ===\n";
+    std::cout << "Delta Call : " << delta_call << std::endl;
+    std::cout << "Delta Put  : " << delta_put  << std::endl;
+    std::cout << "Gamma      : " << gamma      << std::endl;
+    std::cout << "Vega       : " << vega       << std::endl;
+
     return 0;
 }

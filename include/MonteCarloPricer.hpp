@@ -15,6 +15,18 @@ class MonteCarloPricer {
 
         double priceEuropeanAntithetic(double S_0, double T, const Payoff& payoff, int nSimulations) const;
 
+        double delta(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
+
+        double delta_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
+
+        double gamma(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
+
+        double gamma_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
+
+        double vega(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
+
+        double vega_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
+
     private:
 
         double r_;

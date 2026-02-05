@@ -33,3 +33,31 @@ double BlackScholes::put(double S_0, double K, double T, double r, double sigma)
 }
 
 
+double BlackScholes::delta(OptionType Option, double S_0, double K, double T, double r, double sigma){
+    
+    double d1_ = d1(S_0, K, T, r, sigma);
+
+    if (Option == OptionType::Call)
+
+        return norm_cdf(d1_);
+    else 
+
+        return norm_cdf(d1_) - 1.0;
+
+}
+
+double BlackScholes::gamma(double S_0, double K, double T, double r, double sigma){
+
+    double d1_ = d1(S_0, K, T, r, sigma);
+    double pdf = std::exp(-0.5 * d1_ * d1_) / std::sqrt(2.0 * M_PI);
+
+    return pdf / (S_0 * sigma * std::sqrt(T));
+}
+
+double BlackScholes::vega(double S_0, double K, double T, double r, double sigma){
+
+    double d1_ = d1(S_0, K, T, r, sigma);
+    double pdf = std::exp(-0.5 * d1_ * d1_) / std::sqrt(2.0 * M_PI);
+
+    return S_0 * std::sqrt(T) * pdf;
+}

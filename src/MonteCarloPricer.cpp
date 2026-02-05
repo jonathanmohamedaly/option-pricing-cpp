@@ -37,3 +37,53 @@ double MonteCarloPricer::priceEuropeanAntithetic(double S_0, double T, const Pay
 
     return std::exp(-r_ * T) * total_payoff / nSimulations;  
 }
+
+double MonteCarloPricer::delta(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
+    double sup = priceEuropean(S_0 + h, T, payoff, nSimulations);
+    double inf = priceEuropean(S_0 - h, T, payoff, nSimulations);
+
+    return (sup - inf) / (2.0 * h);
+}
+
+double MonteCarloPricer::delta_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
+    double sup = priceEuropeanAntithetic(S_0 + h, T, payoff, nSimulations);
+    double inf = priceEuropeanAntithetic(S_0 - h, T, payoff, nSimulations);
+
+    return (sup - inf) / (2.0 * h);
+}
+
+double MonteCarloPricer::gamma(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
+    double sup = priceEuropean(S_0 + h, T, payoff, nSimulations);
+    double mid = priceEuropean(S_0, T, payoff, nSimulations);
+    double inf = priceEuropean(S_0 - h, T, payoff, nSimulations);
+
+    return (sup - 2.0 * mid + inf) / (h * h);
+}
+
+double MonteCarloPricer::gamma_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
+    double sup = priceEuropeanAntithetic(S_0 + h, T, payoff, nSimulations);
+    double mid = priceEuropeanAntithetic(S_0, T, payoff, nSimulations);
+    double inf = priceEuropeanAntithetic(S_0 - h, T, payoff, nSimulations);
+
+    return (sup - 2.0 * mid + inf) / (h * h);
+}
+
+double MonteCarloPricer::vega(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
+    MonteCarloPricer mc_sup(r_, sigma_ + h);
+    MonteCarloPricer mc_inf(r_, sigma_ - h);
+
+    double sup  = mc_sup.priceEuropean(S_0, T, payoff, nSimulations);
+    double inf = mc_inf.priceEuropean(S_0, T, payoff, nSimulations);
+
+    return (sup - inf) / (2.0 * h);
+}
+
+double MonteCarloPricer::vega_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
+    MonteCarloPricer mc_sup(r_, sigma_ + h);
+    MonteCarloPricer mc_inf(r_, sigma_ - h);
+
+    double sup  = mc_sup.priceEuropeanAntithetic(S_0, T, payoff, nSimulations);
+    double inf = mc_inf.priceEuropeanAntithetic(S_0, T, payoff, nSimulations);
+
+    return (sup - inf) / (2.0 * h);
+}
