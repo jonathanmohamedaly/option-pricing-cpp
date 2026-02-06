@@ -2,7 +2,7 @@
 
 #include "Payoff.hpp"
 #include "RandomGenerator.hpp"
-
+#include "BlackScholes.hpp"
 
 //Estimate the value of an option using Monte Carlo Method
 class MonteCarloPricer {
@@ -14,6 +14,8 @@ class MonteCarloPricer {
         double priceEuropean(double S_0, double T, const Payoff& payoff, int nSimulations) const;
 
         double priceEuropeanAntithetic(double S_0, double T, const Payoff& payoff, int nSimulations) const;
+
+        double priceEuropeanControlVariate(double S_0, double K, OptionType type, double T, const Payoff& payoff, int nSimulations) const;
 
         double delta(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
 

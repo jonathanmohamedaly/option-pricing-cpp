@@ -25,7 +25,7 @@ int main() {
 
     std::ofstream out("convergence_mc.txt");
     if (!out) {
-        std::cerr << "Erreur : impossible d'ouvrir le fichier\n";
+        std::cerr << "Error\n";
         return 1;
     }
 
@@ -45,7 +45,7 @@ int main() {
 
     std::ofstream out2("convergence_mc_antithetic.txt");
     if (!out2) {
-        std::cerr << "Erreur : impossible d'ouvrir le fichier\n";
+        std::cerr << "Error\n";
         return 1;
     }
 
@@ -62,6 +62,26 @@ int main() {
     }
 
     out2.close();
+
+    std::ofstream out3("convergence_mc_Control_Variate.txt");
+    if (!out2) {
+        std::cerr << "Error\n";
+        return 1;
+    }
+
+    out3 << "nSimulations;MC_Price_Control_Variate;Relative_Error\n";
+
+    for (auto n : nSimulations) {
+        MonteCarloPricer mc(r, sigma);
+        double mcPrice = mc.priceEuropeanControlVariate(S0, K, OptionType::Call, T, call, n);
+        double error = std::abs(mcPrice - bsPrice) / bsPrice;
+
+        out3 << n << ";"
+            << mcPrice << ";"
+            << error << "\n";
+    }
+
+    out3.close();
 
     return 0;
 }
