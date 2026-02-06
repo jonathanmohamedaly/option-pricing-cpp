@@ -22,32 +22,54 @@ int main() {
     }
     
     std::ofstream out("convergence_delta_mc.txt");
-if (!out) {
-    std::cerr << "Erreur : impossible d'ouvrir le fichier\n";
-    return 1;
-}
+    if (!out) {
+        std::cerr << "Error\n";
+        return 1;
+    }
 
-out << "nSimulations;Delta_MC;Delta_MC_Antithetic;Delta_BS;Relative_Error\n";
+    out << "nSimulations;Delta_MC;Delta_BS;Relative_Error\n";
 
-double h = 0.01 * S0;
+    double h = 0.01 * S0;
 
-for (auto n : nSimulations) {
-    MonteCarloPricer mc(r, sigma);
+    for (auto n : nSimulations) {
+        MonteCarloPricer mc(r, sigma);
 
-    double delta_mc = mc.delta(call, S0, T, n, h);
-    double delta_mc_antithetic = mc.delta_antithetic(call, S0, T, n, h);
-    double delta_bs = BlackScholes::delta(OptionType::Call, S0, K, T, r, sigma);
+        double delta_mc = mc.delta(call, S0, T, n, h);
+        double delta_bs = BlackScholes::delta(OptionType::Call, S0, K, T, r, sigma);
 
-    double error = std::abs(delta_mc - delta_bs) / std::abs(delta_bs);
+        double error = std::abs(delta_mc - delta_bs) / std::abs(delta_bs);
 
-    out << n << ";"
-        << delta_mc << ";"
-        << delta_mc_antithetic << ";"
-        << delta_bs << ";"
-        << error << "\n";
-}
+        out << n << ";"
+            << delta_mc << ";"
+            << delta_bs << ";"
+            << error << "\n";
+    }
 
-out.close();
+    out.close();
+
+    std::ofstream out2("convergence_delta_antithetic.txt");
+    if (!out2) {
+        std::cerr << "Error\n";
+        return 1;
+    }
+
+    out2 << "nSimulations;Delta_Antithetic;Delta_BS;Relative_Error\n";
+
+    for (auto n : nSimulations) {
+        MonteCarloPricer mc(r, sigma);
+
+        double delta_antithetic = mc.delta_antithetic(call, S0, T, n, h);
+        double delta_bs = BlackScholes::delta(OptionType::Call, S0, K, T, r, sigma);
+
+        double error = std::abs(delta_antithetic - delta_bs) / std::abs(delta_bs);
+
+        out2 << n << ";"
+            << delta_antithetic << ";"
+            << delta_bs << ";"
+            << error << "\n";
+    }
+
+    out2.close();
 
     return 0;
 }
