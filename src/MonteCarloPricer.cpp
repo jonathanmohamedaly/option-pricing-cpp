@@ -38,6 +38,7 @@ double MonteCarloPricer::priceEuropeanAntithetic(double S_0, double T, const Pay
     return std::exp(-r_ * T) * total_payoff / nSimulations;  
 }
 
+//Useless for European Options
 double MonteCarloPricer::priceEuropeanControlVariate(double S_0, double K, OptionType type, double T, const Payoff& payoff, int nSimulations) const{
 
     double sum_X = 0.0, sum_Y = 0.0;
@@ -54,11 +55,18 @@ double MonteCarloPricer::priceEuropeanControlVariate(double S_0, double K, Optio
         double S_T1 = S_0 * std::exp((r_ - 0.5*sigma_*sigma_)*T + sigma_*sqrt(T)*Z);
         double S_T2 = S_0 * std::exp((r_ - 0.5*sigma_*sigma_)*T + sigma_*sqrt(T)*(-Z));
 
-        double X1 = payoff(S_T1);
-        double X2 = payoff(S_T2);
+        // Discount directement ici
+        double X1 = std::exp(-r_*T) * payoff(S_T1);
+        double X2 = std::exp(-r_*T) * payoff(S_T2);
 
-        double Y1 = std::max(S_T1 - K, 0.0);
-        double Y2 = std::max(S_T2 - K, 0.0);
+        double Y1, Y2;
+        if (type == OptionType::Call) {
+            Y1 = std::exp(-r_*T) * std::max(S_T1 - K, 0.0);
+            Y2 = std::exp(-r_*T) * std::max(S_T2 - K, 0.0);
+        } else {
+            Y1 = std::exp(-r_*T) * std::max(K - S_T1, 0.0);
+            Y2 = std::exp(-r_*T) * std::max(K - S_T2, 0.0);
+        }
 
         sum_X  += X1 + X2;
         sum_Y  += Y1 + Y2;
@@ -66,17 +74,19 @@ double MonteCarloPricer::priceEuropeanControlVariate(double S_0, double K, Optio
         sum_YY += Y1*Y1 + Y2*Y2;
     }
 
-    double mean_X = sum_X / nSimulations;
-    double mean_Y = sum_Y / nSimulations;
+    int totalSamples = 2 * nSimulations;
 
-    double cov_XY = sum_XY / nSimulations - mean_X * mean_Y;
-    double var_Y  = sum_YY / nSimulations - mean_Y * mean_Y;
+    double mean_X = sum_X / totalSamples;
+    double mean_Y = sum_Y / totalSamples;
+
+    double cov_XY = sum_XY / totalSamples - mean_X * mean_Y;
+    double var_Y  = sum_YY / totalSamples - mean_Y * mean_Y;
 
     double beta = cov_XY / var_Y;
 
     double price = mean_X + beta * (bs_price - mean_Y);
 
-    return std::exp(-r_ * T) * price;
+    return price;
 }
 
 
