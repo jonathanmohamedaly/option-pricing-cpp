@@ -92,51 +92,192 @@ double MonteCarloPricer::priceEuropeanControlVariate(double S_0, double K, Optio
 
 
 double MonteCarloPricer::delta(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
-    double sup = priceEuropean(S_0 + h, T, payoff, nSimulations);
-    double inf = priceEuropean(S_0 - h, T, payoff, nSimulations);
 
-    return (sup - inf) / (2.0 * h);
+    double payoff_plus  = 0.0;
+    double payoff_minus = 0.0;
+
+    for (int i = 0; i < nSimulations; ++i) {
+        double Z = rng_.gaussian();
+
+        double drift = (r_ - 0.5 * sigma_ * sigma_) * T;
+        double vol   = sigma_ * std::sqrt(T);
+
+        double S_plus  = (S_0 + h) * std::exp(drift + vol * Z);
+        double S_minus = (S_0 - h) * std::exp(drift + vol * Z);
+
+        payoff_plus  += payoff(S_plus);
+        payoff_minus += payoff(S_minus);
+    }
+
+    double price_plus  = std::exp(-r_ * T) * payoff_plus  / nSimulations;
+    double price_minus = std::exp(-r_ * T) * payoff_minus / nSimulations;
+
+    return (price_plus - price_minus) / (2.0 * h);
 }
 
 double MonteCarloPricer::delta_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
-    double sup = priceEuropeanAntithetic(S_0 + h, T, payoff, nSimulations);
-    double inf = priceEuropeanAntithetic(S_0 - h, T, payoff, nSimulations);
+    
+    if (nSimulations % 2 != 0) nSimulations++;
 
-    return (sup - inf) / (2.0 * h);
+    double payoff_plus  = 0.0;
+    double payoff_minus = 0.0;
+
+    for (int i = 0; i < nSimulations / 2; ++i) {
+        double Z = rng_.gaussian();
+
+        double drift = (r_ - 0.5 * sigma_ * sigma_) * T;
+        double vol   = sigma_ * std::sqrt(T);
+
+        double S_p1 = (S_0 + h) * std::exp(drift + vol * Z);
+        double S_p2 = (S_0 + h) * std::exp(drift - vol * Z);
+
+        double S_m1 = (S_0 - h) * std::exp(drift + vol * Z);
+        double S_m2 = (S_0 - h) * std::exp(drift - vol * Z);
+
+        payoff_plus  += payoff(S_p1) + payoff(S_p2);
+        payoff_minus += payoff(S_m1) + payoff(S_m2);
+    }
+
+    payoff_plus  /= nSimulations;
+    payoff_minus /= nSimulations;
+
+    double price_plus  = std::exp(-r_ * T) * payoff_plus;
+    double price_minus = std::exp(-r_ * T) * payoff_minus;
+
+    return (price_plus - price_minus) / (2.0 * h);
 }
 
 double MonteCarloPricer::gamma(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
-    double sup = priceEuropean(S_0 + h, T, payoff, nSimulations);
-    double mid = priceEuropean(S_0, T, payoff, nSimulations);
-    double inf = priceEuropean(S_0 - h, T, payoff, nSimulations);
+    
+    double payoff_plus  = 0.0;
+    double payoff_mid   = 0.0;
+    double payoff_minus = 0.0;
 
-    return (sup - 2.0 * mid + inf) / (h * h);
+    for (int i = 0; i < nSimulations; ++i) {
+        double Z = rng_.gaussian();
+
+        double drift = (r_ - 0.5 * sigma_ * sigma_) * T;
+        double vol   = sigma_ * std::sqrt(T);
+
+        double ST_plus  = (S_0 + h) * std::exp(drift + vol * Z);
+        double ST_mid   = S_0 * std::exp(drift + vol * Z);
+        double ST_minus = (S_0 - h) * std::exp(drift + vol * Z);
+
+        payoff_plus  += payoff(ST_plus);
+        payoff_mid   += payoff(ST_mid);
+        payoff_minus += payoff(ST_minus);
+    }
+
+    payoff_plus  /= nSimulations;
+    payoff_mid   /= nSimulations;
+    payoff_minus /= nSimulations;
+
+    double disc = std::exp(-r_ * T);
+
+    return disc * (payoff_plus - 2.0 * payoff_mid + payoff_minus) / (h * h);
 }
 
 double MonteCarloPricer::gamma_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
-    double sup = priceEuropeanAntithetic(S_0 + h, T, payoff, nSimulations);
-    double mid = priceEuropeanAntithetic(S_0, T, payoff, nSimulations);
-    double inf = priceEuropeanAntithetic(S_0 - h, T, payoff, nSimulations);
 
-    return (sup - 2.0 * mid + inf) / (h * h);
+    if (nSimulations % 2 != 0) nSimulations++;
+
+    double payoff_plus  = 0.0;
+    double payoff_mid   = 0.0;
+    double payoff_minus = 0.0;
+
+    for (int i = 0; i < nSimulations / 2; ++i) {
+        double Z = rng_.gaussian();
+
+        double drift = (r_ - 0.5 * sigma_ * sigma_) * T;
+        double vol   = sigma_ * std::sqrt(T);
+
+        double ST_p1 = (S_0 + h) * std::exp(drift + vol * Z);
+        double ST_p2 = (S_0 + h) * std::exp(drift - vol * Z);
+
+        double ST_m1 = (S_0 - h) * std::exp(drift + vol * Z);
+        double ST_m2 = (S_0 - h) * std::exp(drift - vol * Z);
+
+        double ST_0_1 = S_0 * std::exp(drift + vol * Z);
+        double ST_0_2 = S_0 * std::exp(drift - vol * Z);
+
+        payoff_plus  += payoff(ST_p1) + payoff(ST_p2);
+        payoff_minus += payoff(ST_m1) + payoff(ST_m2);
+        payoff_mid   += payoff(ST_0_1) + payoff(ST_0_2);
+    }
+
+    payoff_plus  /= nSimulations;
+    payoff_mid   /= nSimulations;
+    payoff_minus /= nSimulations;
+
+    double disc = std::exp(-r_ * T);
+
+    return disc * (payoff_plus - 2.0 * payoff_mid + payoff_minus) / (h * h);
 }
 
 double MonteCarloPricer::vega(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
-    MonteCarloPricer mc_sup(r_, sigma_ + h);
-    MonteCarloPricer mc_inf(r_, sigma_ - h);
+    
+    double payoff_plus  = 0.0;
+    double payoff_minus = 0.0;
 
-    double sup  = mc_sup.priceEuropean(S_0, T, payoff, nSimulations);
-    double inf = mc_inf.priceEuropean(S_0, T, payoff, nSimulations);
+    for (int i = 0; i < nSimulations; ++i) {
 
-    return (sup - inf) / (2.0 * h);
+        double Z = rng_.gaussian();
+
+        double drift_plus  = (r_ - 0.5 * (sigma_ + h) * (sigma_ + h)) * T;
+        double drift_minus = (r_ - 0.5 * (sigma_ - h) * (sigma_ - h)) * T;
+
+        double vol_plus  = (sigma_ + h) * std::sqrt(T);
+        double vol_minus = (sigma_ - h) * std::sqrt(T);
+
+        double S_plus  = S_0 * std::exp(drift_plus  + vol_plus  * Z);
+        double S_minus = S_0 * std::exp(drift_minus + vol_minus * Z);
+
+        payoff_plus  += payoff(S_plus);
+        payoff_minus += payoff(S_minus);
+    }
+
+    payoff_plus  /= nSimulations;
+    payoff_minus /= nSimulations;
+
+    double price_plus  = std::exp(-r_ * T) * payoff_plus;
+    double price_minus = std::exp(-r_ * T) * payoff_minus;
+
+    return (price_plus - price_minus) / (2.0 * h);
 }
 
 double MonteCarloPricer::vega_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const {
-    MonteCarloPricer mc_sup(r_, sigma_ + h);
-    MonteCarloPricer mc_inf(r_, sigma_ - h);
+    
+    if (nSimulations % 2 != 0) nSimulations++;
 
-    double sup  = mc_sup.priceEuropeanAntithetic(S_0, T, payoff, nSimulations);
-    double inf = mc_inf.priceEuropeanAntithetic(S_0, T, payoff, nSimulations);
+    double payoff_plus  = 0.0;
+    double payoff_minus = 0.0;
 
-    return (sup - inf) / (2.0 * h);
+    for (int i = 0; i < nSimulations / 2; ++i) {
+
+        double Z = rng_.gaussian();
+
+        double drift_plus  = (r_ - 0.5 * (sigma_ + h) * (sigma_ + h)) * T;
+        double drift_minus = (r_ - 0.5 * (sigma_ - h) * (sigma_ - h)) * T;
+
+        double vol_plus  = (sigma_ + h) * std::sqrt(T);
+        double vol_minus = (sigma_ - h) * std::sqrt(T);
+
+        double S_p1 = S_0 * std::exp(drift_plus  + vol_plus  * Z);
+        double S_p2 = S_0 * std::exp(drift_plus  - vol_plus  * Z);
+
+        double S_m1 = S_0 * std::exp(drift_minus + vol_minus * Z);
+        double S_m2 = S_0 * std::exp(drift_minus - vol_minus * Z);
+
+        payoff_plus  += payoff(S_p1) + payoff(S_p2);
+        payoff_minus += payoff(S_m1) + payoff(S_m2);
+    }
+
+    payoff_plus  /= nSimulations;
+    payoff_minus /= nSimulations;
+
+    double price_plus  = std::exp(-r_ * T) * payoff_plus;
+    double price_minus = std::exp(-r_ * T) * payoff_minus;
+
+    return (price_plus - price_minus) / (2.0 * h);
+
 }
