@@ -71,5 +71,67 @@ int main() {
 
     out2.close();
 
+    int nSim = 20000;
+    int nRuns = 500;
+
+    std::ofstream out3("delta_histogram.txt");
+    out3 << "Run;Delta_MC;Delta_Antithetic\n";
+
+    for (int i = 0; i < nRuns; ++i) {
+        MonteCarloPricer mc(r, sigma);
+
+        double delta_mc = mc.delta(call, S0, T, nSim, h);
+        double delta_ant = mc.delta_antithetic(call, S0, T, nSim, h);
+
+        out3 << i << ";"
+            << delta_mc << ";"
+            << delta_ant << "\n";
+    }
+
+    out3.close();
+
+    nSim = 50000;
+    double hFactor = 0.01;
+
+    std::ofstream out4("delta_vs_spot.txt");
+    out4 << "S0;Delta_MC;Delta_Antithetic;Delta_BS\n";
+
+    for (double S0 = 50.0; S0 <= 150.0; S0 += 2.0) {
+
+        double h = hFactor * S0;
+        MonteCarloPricer mc(r, sigma);
+
+        double delta_mc  = mc.delta(call, S0, T, nSim, h);
+        double delta_ant = mc.delta_antithetic(call, S0, T, nSim, h);
+        double delta_bs  = BlackScholes::delta(OptionType::Call, S0, K, T, r, sigma);
+
+        out4 << S0 << ";"
+            << delta_mc << ";"
+            << delta_ant << ";"
+            << delta_bs << "\n";
+    }
+
+    out4.close();
+
+    nSim = 15000;
+    nRuns = 300;
+    h = 0.01 * S0;
+
+    std::ofstream out5("delta_boxplot.txt");
+    out5 << "Run;Delta_MC;Delta_Antithetic\n";
+
+    for (int i = 0; i < nRuns; ++i) {
+        MonteCarloPricer mc(r, sigma);
+
+        double delta_mc  = mc.delta(call, S0, T, nSim, h);
+        double delta_ant = mc.delta_antithetic(call, S0, T, nSim, h);
+
+        out5 << i << ";"
+            << delta_mc << ";"
+            << delta_ant << "\n";
+    }
+
+    out5.close();
+
     return 0;
 }
