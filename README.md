@@ -11,3 +11,8 @@ Greek normaux, antithetical et après antithetical avec crn pour mieux
 Pour chaque greek : delta, gamma et Vega 4 graphiques
 
 Tous les greeks avec CRN
+
+Creation of Asian options (call and put) arithmetic
+And test greeks
+
+Asian option geometric 

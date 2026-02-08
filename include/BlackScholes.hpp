@@ -1,7 +1,6 @@
 #pragma once 
 #include <cmath>
 
-
 enum class OptionType {Call, Put};
 // Compute the Values of Put and Call option using the Black-Scholes equation
 class BlackScholes {
@@ -19,6 +18,12 @@ class BlackScholes {
 
     //Price of an European Put option
     static double put(double S_0, double K, double T, double r, double sigma);
+
+    //Price of an Asian Geometric Call option
+    static double geometricAsianCall(double S_0, double K, double r, double sigma, double T, int nSteps);
+
+    //Price of an Asian Geometric Put option
+    static double geometricAsianPut(double S_0, double K, double r, double sigma, double T, int nSteps);
 
     //Greeks
 

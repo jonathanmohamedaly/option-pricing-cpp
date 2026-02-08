@@ -33,6 +33,42 @@ double BlackScholes::put(double S_0, double K, double T, double r, double sigma)
 }
 
 
+double BlackScholes::geometricAsianCall(double S_0, double K, double r, double sigma, double T, int nSteps){
+
+    double t_bar = T * (nSteps + 1.0) / (2.0 * nSteps);
+
+    double sigma_G_sq = sigma * sigma * (nSteps + 1.0) * (2.0 * nSteps + 1.0) / (6.0 * nSteps * nSteps) * T;
+
+    double sigma_G = std::sqrt(sigma_G_sq);
+
+    double mu_G = std::log(S_0) + (r - 0.5 * sigma * sigma) * t_bar + 0.5 * sigma_G_sq;
+
+    double d1 = (mu_G - std::log(K) + sigma_G_sq) / sigma_G;
+
+    double d2 = d1 - sigma_G;
+
+    return std::exp(-r * T) * (std::exp(mu_G) * norm_cdf(d1) - K * norm_cdf(d2));
+}
+
+double BlackScholes::geometricAsianPut(double S_0, double K, double r, double sigma, double T, int nSteps){
+
+    double t_bar = T * (nSteps + 1.0) / (2.0 * nSteps);
+
+    double sigma_G_sq = sigma * sigma * (nSteps + 1.0) * (2.0 * nSteps + 1.0) / (6.0 * nSteps * nSteps) * T;
+
+    double sigma_G = std::sqrt(sigma_G_sq);
+
+    double mu_G = std::log(S_0) + (r - 0.5 * sigma * sigma) * t_bar + 0.5 * sigma_G_sq;
+
+    double d1 = (mu_G - std::log(K) + sigma_G_sq) / sigma_G;
+
+    double d2 = d1 - sigma_G;
+
+    return std::exp(-r * T) * (K * norm_cdf(-d2) - std::exp(mu_G) * norm_cdf(-d1));
+}
+
+
+
 double BlackScholes::delta(OptionType Option, double S_0, double K, double T, double r, double sigma){
     
     double d1_ = d1(S_0, K, T, r, sigma);

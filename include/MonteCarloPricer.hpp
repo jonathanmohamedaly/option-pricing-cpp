@@ -17,6 +17,16 @@ class MonteCarloPricer {
 
         double priceEuropeanControlVariate(double S_0, double K, OptionType type, double T, const Payoff& payoff, int nSimulations) const;
 
+        double priceAsian(double S_0, double T, const Payoff& payoff, int nSimulations, int nSteps) const;
+
+        double priceAsianAntithetic(double S_0, double T, const Payoff& payoff, int nSimulations, int nSteps) const;
+        
+        double priceAsianControlVariate(double S_0, double K, OptionType type, double T, const Payoff& asianPayoff, int nSimulations,
+                                        int nSteps) const;
+
+        double priceAsianGeometricControlVariate(double S_0, double K, OptionType type, double T, const Payoff& asianArithmeticPayoff,
+                                                 const Payoff& asianGeometricPayoff, int nSimulations, int nSteps) const;
+
         double delta(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
 
         double delta_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
