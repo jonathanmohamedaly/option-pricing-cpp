@@ -39,6 +39,12 @@ class MonteCarloPricer {
 
         double vega_antithetic(const Payoff& payoff, double S_0, double T, int nSimulations, double h) const;
 
+        double deltaAsianPathwise(double S0, double K, OptionType type, double T, int nSimulations, int nSteps) const ;
+
+        double deltaAsianPathwiseAntithetic(double S0, double K, OptionType type, double T, int nSimulations, int nSteps) const;
+
+        double deltaAsianPathwiseAntitheticCV( double S0, double K, OptionType type, double T, int nSimulations, int nSteps) const;
+
     private:
 
         double r_;

@@ -441,3 +441,185 @@ double MonteCarloPricer::vega_antithetic(const Payoff& payoff, double S_0, doubl
     return (price_plus - price_minus) / (2.0 * h);
 
 }
+
+
+
+double MonteCarloPricer::deltaAsianPathwise(double S0, double K, OptionType type, double T, int nSimulations, int nSteps) const {
+
+    double dt    = T / nSteps;
+    double drift = (r_ - 0.5 * sigma_ * sigma_) * dt;
+    double vol   = sigma_ * std::sqrt(dt);
+
+    double sumDelta = 0.0;
+
+    for (int i = 0; i < nSimulations; ++i) {
+
+        double S = S0;
+        std::vector<double> path(nSteps + 1);
+        path[0] = S0;
+
+
+        for (int j = 1; j <= nSteps; ++j) {
+            double Z = rng_.gaussian();
+            S *= std::exp(drift + vol * Z);
+            path[j] = S;
+        }
+
+
+        double sumS = 0.0;
+        for (int j = 1; j <= nSteps; ++j) sumS += path[j];
+        double average = sumS / nSteps;
+
+
+        double derivative = 0.0;
+        if (average > K && type == OptionType::Call)
+            derivative = sumS / (nSteps * S0);
+        else if (average < K && type == OptionType::Put)
+            derivative = -sumS / (nSteps * S0);
+
+        sumDelta += derivative;
+    }
+
+    return std::exp(-r_ * T) * sumDelta / nSimulations;
+}
+
+double MonteCarloPricer::deltaAsianPathwiseAntithetic(double S0, double K, OptionType type, double T, int nSimulations, int nSteps) const {
+
+    double dt    = T / nSteps;
+    double drift = (r_ - 0.5 * sigma_ * sigma_) * dt;
+    double vol   = sigma_ * std::sqrt(dt);
+
+    double sumDelta = 0.0;
+
+    for (int i = 0; i < nSimulations; ++i) {
+
+        double S1 = S0;
+        double S2 = S0;
+
+        double sumS1 = 0.0;
+        double sumS2 = 0.0;
+
+        for (int j = 1; j <= nSteps; ++j) {
+
+            double Z = rng_.gaussian();
+
+            S1 *= std::exp(drift + vol * Z);
+            S2 *= std::exp(drift - vol * Z);
+
+            sumS1 += S1;
+            sumS2 += S2;
+        }
+
+        double avg1 = sumS1 / nSteps;
+        double avg2 = sumS2 / nSteps;
+
+        double deriv1 = (sumS1 / nSteps) / S0;
+        double deriv2 = (sumS2 / nSteps) / S0;
+
+        double delta1 = 0.0;
+        double delta2 = 0.0;
+
+        if (type == OptionType::Call) {
+
+            if (avg1 > K) delta1 = deriv1;
+            if (avg2 > K) delta2 = deriv2;
+
+        } else { // Put
+
+            if (avg1 < K) delta1 = -deriv1;
+            if (avg2 < K) delta2 = -deriv2;
+        }
+
+        sumDelta += 0.5 * (delta1 + delta2);
+    }
+
+    return std::exp(-r_ * T) * sumDelta / nSimulations;
+}
+
+
+double MonteCarloPricer::deltaAsianPathwiseAntitheticCV( double S0, double K, OptionType type, double T, int nSimulations, int nSteps) const {
+
+    double dt    = T / nSteps;
+    double drift = (r_ - 0.5 * sigma_ * sigma_) * dt;
+    double vol   = sigma_ * std::sqrt(dt);
+
+    double sum_dX = 0.0;
+    double sum_dY = 0.0;
+    double sum_dXdY = 0.0;
+    double sum_dY2  = 0.0;
+
+    // valeur exacte delta géométrique
+    double delta_geo_exact =
+        (type == OptionType::Call)
+        ? BlackScholes::geometricAsianCall(S0, K, r_, sigma_, T, nSteps)
+        : BlackScholes::geometricAsianPut (S0, K, r_, sigma_, T, nSteps);
+
+    for (int i = 0; i < nSimulations; ++i) {
+
+        double S1 = S0, S2 = S0;
+        double sumS1 = 0.0, sumS2 = 0.0;
+        double logSum1 = 0.0, logSum2 = 0.0;
+
+        for (int j = 1; j <= nSteps; ++j) {
+
+            double Z = rng_.gaussian();
+
+            S1 *= std::exp(drift + vol * Z);
+            S2 *= std::exp(drift - vol * Z);
+
+            sumS1 += S1;
+            sumS2 += S2;
+
+            logSum1 += std::log(S1);
+            logSum2 += std::log(S2);
+        }
+
+        double avg1 = sumS1 / nSteps;
+        double avg2 = sumS2 / nSteps;
+
+        double G1 = std::exp(logSum1 / nSteps);
+        double G2 = std::exp(logSum2 / nSteps);
+
+        double dX1 = 0.0, dX2 = 0.0;
+        double dY1 = 0.0, dY2 = 0.0;
+
+        double sign = (type == OptionType::Call) ? 1.0 : -1.0;
+
+        // Arithmetic delta 
+        if ((type == OptionType::Call && avg1 > K) ||
+            (type == OptionType::Put  && avg1 < K))
+            dX1 = sign * (avg1 / S0);
+
+        if ((type == OptionType::Call && avg2 > K) ||
+            (type == OptionType::Put  && avg2 < K))
+            dX2 = sign * (avg2 / S0);
+
+        //  Geometric delta 
+        if ((type == OptionType::Call && G1 > K) ||
+            (type == OptionType::Put  && G1 < K))
+            dY1 = sign * (G1 / S0);
+
+        if ((type == OptionType::Call && G2 > K) ||
+            (type == OptionType::Put  && G2 < K))
+            dY2 = sign * (G2 / S0);
+
+        double dX = 0.5 * (dX1 + dX2);
+        double dY = 0.5 * (dY1 + dY2);
+
+        sum_dX   += dX;
+        sum_dY   += dY;
+        sum_dXdY += dX * dY;
+        sum_dY2  += dY * dY;
+    }
+
+    double mean_dX = sum_dX / nSimulations;
+    double mean_dY = sum_dY / nSimulations;
+
+    double cov = sum_dXdY / nSimulations - mean_dX * mean_dY;
+    double var = sum_dY2  / nSimulations - mean_dY * mean_dY;
+
+    double beta = cov / var;
+
+    return std::exp(-r_ * T) *
+           (mean_dX + beta * (delta_geo_exact - mean_dY));
+}
